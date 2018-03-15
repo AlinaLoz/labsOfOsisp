@@ -12,7 +12,6 @@
 #define TRUE 1
 #define FALSE 0
 
-int process_count = 0;
 
 int cpyFile(const char* src_path, const char* dst_path, int xwr)
 {
@@ -21,12 +20,22 @@ int cpyFile(const char* src_path, const char* dst_path, int xwr)
    unsigned char buffer[4096];
 	src_fd = open(src_path, O_RDONLY);
    dst_fd = open(dst_path, O_CREAT|O_WRONLY);
+	if (src_fd == -1)
+	{
+			fprintf(stderr, "Error open file.\n");
+         exit(EXIT_FAILURE);
+    }
+	if (dst_fd == -1)
+	{
+			fprintf(stderr, "Error open file.\n");
+         exit(EXIT_FAILURE);
+    }
 	while (1) 
 	{
 		err = read(src_fd, buffer, 4096);
       if (err == -1) 
 		{
-			printf("Error reading file.\n");
+			fprintf(stderr, "Error reading file.\n");
          exit(EXIT_FAILURE);
       }
 		n = err;
@@ -35,7 +44,7 @@ int cpyFile(const char* src_path, const char* dst_path, int xwr)
 		err = write(dst_fd, buffer, n);
       if (err == -1) 
 		{
-			printf("Error writing to file.\n");
+			fprintf(stderr, "Error writing to file.\n");
          exit(EXIT_FAILURE);
       }
 	}
@@ -53,6 +62,7 @@ void createFullPath(char* fullPathDir, const char* nameDir, const char* nameFile
 
 int copyDir( char* path_Dir1, char* path_Dir2, int MAX_PROCESSES)
 {
+	int process_count = 0;
 	DIR *ptrDir1 = opendir(path_Dir1); 
 	DIR *ptrDir2 = opendir(path_Dir2);
 	struct dirent *currFileDir1;
@@ -73,7 +83,7 @@ int copyDir( char* path_Dir1, char* path_Dir2, int MAX_PROCESSES)
 		return EXIT_FAILURE;
 	}
 
-	while(currFileDir1 = readdir(ptrDir1))
+	while((currFileDir1 = readdir(ptrDir1)) != NULL)  //nen
 	{
 		createFullPath(path_file_1, path_Dir1, currFileDir1->d_name);
 		if (!stat(path_file_1, &st_direntDir1)) 
@@ -94,7 +104,7 @@ int copyDir( char* path_Dir1, char* path_Dir2, int MAX_PROCESSES)
 						} 	
 					}else 
 					{
-						printf( "Error statting %s: %s\n", path_file_2, strerror( errno ) );
+						fprintf(stderr, "Error statting %s: %s\n", path_file_2, strerror( errno ) );
 					}
 				}
 				if (!isFind)
@@ -106,19 +116,22 @@ int copyDir( char* path_Dir1, char* path_Dir2, int MAX_PROCESSES)
 				}
 				pid_t pid; 
  				pid = fork (); 
-				process_count++;	
+
 				if ( pid == 0)
 				{
 					createFullPath(temp, path_Dir2, currFileDir1->d_name);
 					int countByte = cpyFile(path_file_1, temp, st_direntDir1.st_mode);
-					printf ("pid=%d, path: %s, count copybyte: %d\n", getpid(), temp, countByte);
+					fprintf (stderr, "pid=%d, path: %s, count copybyte: %d\n", getpid(), temp, countByte);
 					exit(EXIT_SUCCESS);
-				}
+				}else
+					if(pid > 0) {
+						process_count++;
+					}
 			}		
 		}					
 		}else
 		{
-			printf( "Error statting %s: %s\n", path_Dir1, strerror( errno ) ); 
+			fprintf(stderr, "Error statting %s: %s\n", path_Dir1, strerror( errno ) ); 
 			return EXIT_FAILURE;
 		} 		
 	}
@@ -146,10 +159,10 @@ int main(int argc, char *argv[]){
 	int MAX_PROCESSES = atoi(argv[3]);  
 	if ( MAX_PROCESSES == 0)
 	{
-		printf("Неверное число аргументов");
+		fprintf(stderr, "Неверное число аргументов");
     	return EXIT_FAILURE;
 	}
-	
+
 	copyDir(path_dir_1, path_dir_2, MAX_PROCESSES);
 	while (wait(NULL) > 0){}
 	return EXIT_SUCCESS;
