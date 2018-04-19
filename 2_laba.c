@@ -10,12 +10,12 @@
 
 int search(const char *name_dir, const char *name_search_file, int *countWatchingElement)
 {
-	DIR *ptrDir=opendir(name_dir);
-	struct dirent *currFile;
-	struct stat st_dirent;
+	DIR *ptrDir=opendir(name_dir); //директория
+	struct dirent *currFile;   //просто по айлам и название
+	struct stat st_dirent;   //конрке инфа о файлн
 	char fullPath[PATH_MAX] = "";	
 	if (ptrDir != NULL){
-		while(currFile=readdir(ptrDir)){
+		while((currFile=readdir(ptrDir)) != NULL){
 			strcpy(fullPath, name_dir);
 			strcat(fullPath, "/");		
 			strcat(fullPath, currFile->d_name);
@@ -27,7 +27,7 @@ int search(const char *name_dir, const char *name_search_file, int *countWatchin
 					}else if (S_ISREG(st_dirent.st_mode) ){
 						if (!strcmp(name_search_file, currFile->d_name) ){
 							printf("path: %s; size: %ld; time create: %s, I-node number: %ld, mode: %lo (octal)\n", fullPath, (long)st_dirent.st_size, ctime(&st_dirent.st_mtime), (long)st_dirent.st_ino, (unsigned long)st_dirent.st_mode);
-							printf("count watching element: %d", *countWatchingElement);
+							printf("count watching element: %d\n", *countWatchingElement);
 							return 1;
 						}		
 					}
